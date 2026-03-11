@@ -5,6 +5,7 @@ import { createContext, ReactNode, useContext, useEffect, useState } from "react
 
 type AppContextType = {
   userId: string,
+  setUserId: (userId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -22,13 +23,14 @@ export function AppContextProvider({ children }:{ children: ReactNode }){
   return (
     <AppContext.Provider value={{
       userId,
+      setUserId,
     }}>
       {children}
     </AppContext.Provider>
   );
 }
 
-export function useAppContext() {
+export function useAppContext(){
   const context = useContext(AppContext)
   if(!context){
     throw new Error("useAppContext must be used inside AppContextProvider");

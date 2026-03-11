@@ -29,7 +29,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>){
   return (
     <html lang="en" className={cn("font-sans", inter.variable)}>
       <body
@@ -39,14 +39,16 @@ export default function RootLayout({
           <div className="flex flex-col min-h-screen">
             <header className="bg-white shadow-sm">
               <div className="container mx-auto px-4 py-3">
-                <h1 className="text-2xl font-bold">Attendance Tracker</h1>
+                <h1 className="text-2xl font-bold">
+                  <a href="/">Attendance Tracker</a>
+                </h1>
               </div>
             </header>
             {children}
           </div>
-          <footer className="bg-white shadow-sm">
-            <div className="container mx-auto px-4 py-3">
-              <p className="text-sm text-gray-500">© 2026 Attendance Tracker. All rights reserved.</p>
+          <footer className="bg-white shadow-sm w-full">
+            <div className="container mx-auto px-4 py-3 w-fit">
+              <p className="text-sm text-gray-500">© KimNattanan</p>
             </div>
           </footer>
         </AppContextProvider>

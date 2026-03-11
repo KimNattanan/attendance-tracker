@@ -7,25 +7,21 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function App() {
+export default function App(){
   const { userId } = useAppContext();
   const router = useRouter();
 
   const [searchValue, setSearchValue] = useState("");
   const handleSearch = () => {
     const trimmed = searchValue.trim();
-    if (!trimmed) return;
+    if(!trimmed) return;
 
     router.push(`/search/${encodeURIComponent(trimmed)}`);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex justify-center px-4 py-8">
       <div className="w-full max-w-xl space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-xl font-semibold">Attendance Tracker</h1>
-        </div>
-
         <section className="space-y-3 border rounded-md p-4">
           <p className="text-sm font-medium">
             Login to manage your attendance
@@ -79,7 +75,7 @@ export default function App() {
             <Input
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="User ID"
+              placeholder="UserID"
               className="flex-1"
             />
           </div>

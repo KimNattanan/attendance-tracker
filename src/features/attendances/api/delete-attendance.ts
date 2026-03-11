@@ -1,13 +1,13 @@
-"use server";
+"use server"
 
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export async function deleteAttendance(attendanceId: number) {
+export async function deleteAttendance(attendanceId: number){
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;
 
-  if (!userId) {
+  if(!userId){
     throw new Error("Unauthorized");
   }
 

@@ -5,34 +5,34 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAttendance } from "@/features/attendances/api/create-attendance";
-import { Position } from "@/components/MapPicker";
+import { Location } from "@/lib/utils";
 import { CheckCircleIcon } from "lucide-react";
 
-export default function CheckOut() {
+export default function CheckOut(){
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const [status, setStatus] = useState<
-    "idle" | "loading_models" | "camera_on" | "scanning" | "enrolled" | "error"
+    "idle" | "loading_models" | "camera_on" | "scanning" | "success" | "error"
   >("idle");
   const [error, setError] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
 
   const canScan = useMemo(() => status === "camera_on" || status === "idle", [status]);
 
-  const [position, setPosition] = useState<Position>();
+  const [location, setLocation] = useState<Location>();
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
-      setPosition({
+      setLocation({
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
     })});
 
     let cancelled = false;
 
-    async function loadModels() {
+    async function loadModels(){
       try {
         setStatus("loading_models");
         setError("");
@@ -41,9 +41,9 @@ export default function CheckOut() {
           faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
           faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
         ]);
-        if (!cancelled) setStatus("idle");
-      } catch (e) {
-        if (!cancelled) {
+        if(!cancelled) setStatus("idle");
+      } catch(e) {
+        if(!cancelled){
           setStatus("error");
           setError(e instanceof Error ? e.message : "Failed to load face models");
         }
@@ -72,11 +72,11 @@ export default function CheckOut() {
       });
       streamRef.current = stream;
       const el = videoRef.current;
-      if (!el) throw new Error("Video element not ready");
+      if(!el) throw new Error("Video element not ready");
       el.srcObject = stream;
       await el.play();
       setStatus("camera_on");
-    } catch (e) {
+    } catch(e) {
       setStatus("error");
       setError(e instanceof Error ? e.message : "Failed to start camera");
     }
@@ -85,26 +85,26 @@ export default function CheckOut() {
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
+    if(videoRef.current) videoRef.current.srcObject = null;
     setStatus("idle");
   }, []);
 
   const handleFaceScan = useCallback(async () => {
     const videoEl = videoRef.current;
     const canvasEl = canvasRef.current;
-    if (!videoEl || !canvasEl) return;
+    if(!videoEl || !canvasEl) return;
 
     try {
       setStatus("scanning");
       setError("");
 
       const { videoWidth, videoHeight } = videoEl;
-      if (!videoWidth || !videoHeight) throw new Error("Camera not ready");
+      if(!videoWidth || !videoHeight) throw new Error("Camera not ready");
 
       canvasEl.width = videoWidth;
       canvasEl.height = videoHeight;
       const ctx = canvasEl.getContext("2d");
-      if (!ctx) throw new Error("Canvas not available");
+      if(!ctx) throw new Error("Canvas not available");
       ctx.drawImage(videoEl, 0, 0, videoWidth, videoHeight);
 
       const detection = await faceapi
@@ -112,31 +112,31 @@ export default function CheckOut() {
         .withFaceLandmarks()
         .withFaceDescriptor();
 
-      if (!detection) {
+      if(!detection){
         throw new Error("No face detected. Please center your face and try again.");
       }
 
-      if (!position) {
+      if(!location){
         throw new Error("Unable to get user's location.");
       }
 
       const attendance = await createAttendance({
         faceId: detection.descriptor,
-        latitude: position.lat,
-        longitude: position.lng,
+        latitude: location.lat,
+        longitude: location.lng,
         attendanceType: "check-out",
       });
 
       setUserId(attendance.userId);
-      setStatus("enrolled");
+      setStatus("success");
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-    } catch (e) {
+      if(videoRef.current) videoRef.current.srcObject = null;
+    } catch(e) {
       setStatus("camera_on");
       setError(e instanceof Error ? e.message : "Scan failed");
     }
-  }, [position]);
+  }, [location]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
@@ -149,18 +149,18 @@ export default function CheckOut() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 items-center justify-center" hidden={status !== "enrolled"}>
+        <div className="flex flex-col sm:flex-row gap-2 items-center justify-center" hidden={status !== "success"}>
           <CheckCircleIcon className="w-20 h-20 text-green-500" />
         </div>
 
         <div className="space-y-3">
-          <div className="aspect-video w-full overflow-hidden rounded-md bg-black/5 relative" hidden={status === "enrolled"}>
+          <div className="aspect-video w-full overflow-hidden rounded-md bg-black/5 relative" hidden={status === "success"}>
             <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
           </div>
 
           <canvas ref={canvasRef} className="hidden" />
 
-          <div className="flex flex-col sm:flex-row gap-2" hidden={status === "enrolled"}>
+          <div className="flex flex-col sm:flex-row gap-2" hidden={status === "success"}>
             <Button
               type="button"
               onClick={startCamera}
@@ -177,7 +177,7 @@ export default function CheckOut() {
               Stop camera
             </Button>
             <Button type="button" onClick={handleFaceScan} disabled={!canScan || !streamRef.current}>
-              Scan face & enroll
+              Scan face
             </Button>
           </div>
 
@@ -189,14 +189,14 @@ export default function CheckOut() {
                 ? "Loading face models…"
                 : status === "scanning"
                   ? "Scanning…"
-                  : status === "enrolled"
-                    ? "Enrolled."
-                    : "Tip: good lighting + face centered works best."}
+                  : status === "success"
+                    ? "Success."
+                    : "Note: You must register first, but you do not need to log in to check out."}
             </p>
           )}
 
           <div className="grid grid-cols-1 gap-2">
-            <Input value={userId} readOnly placeholder="User ID (from DB) will appear here" />
+            <Input value={userId} readOnly placeholder="UserID will appear here" />
           </div>
         </div>
       </div>

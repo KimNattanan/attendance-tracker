@@ -6,10 +6,10 @@ export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>){
   return (
     <>
-      <div className="fixed bottom-8 right-8 sm:bottom-16 sm:right-16 z-50 text-black">
+      <div className="fixed bottom-8 right-8 sm:bottom-16 sm:right-16 z-50 border-2 border-black rounded-full">
         <Link href="/" className="">
           <Button className="rounded-full items-center w-12 h-12 p-8 flex-col gap-0">
             <FaHome className="size-6"/>

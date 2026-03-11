@@ -1,6 +1,6 @@
 "use client"
 
-import AttendanceList from "@/components/AttendaceList";
+import AttendanceList from "@/features/attendances/components/AttendaceList";
 import { useParams, useSearchParams } from "next/navigation";
 
 export default function Search(){

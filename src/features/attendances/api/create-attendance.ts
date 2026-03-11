@@ -1,4 +1,4 @@
-"use server";
+"use server"
 
 import { prisma } from "@/lib/prisma";
 import { findMatchUserFace } from "@/lib/utils";
@@ -15,8 +15,8 @@ export async function createAttendance({
   latitude,
   longitude,
   attendanceType,
-}: CreateAttendanceInput) {
-  if (!faceId) {
+}: CreateAttendanceInput){
+  if(!faceId){
     throw new Error("faceId is required");
   }
 
@@ -24,7 +24,7 @@ export async function createAttendance({
 
   const best = findMatchUserFace(users, faceId)
 
-  if (!best) {
+  if(!best){
     throw new Error("User not found. Please register if this is your first time.");
   }
 

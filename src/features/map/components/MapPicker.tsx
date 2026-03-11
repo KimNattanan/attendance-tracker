@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css"
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png"
 import markerIcon from "leaflet/dist/images/marker-icon.png"
 import markerShadow from "leaflet/dist/images/marker-shadow.png"
+import { Location } from "@/lib/utils"
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x.src ?? markerIcon2x,
@@ -15,15 +16,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow.src ?? markerShadow
 })
 
-export type Position = {
-  lat: number
-  lng: number
-}
-
-function LocationMarker({ setPosition }: { setPosition: (pos: Position) => void }) {
+function LocationMarker({ setLocation }: { setLocation: (loc: Location) => void }){
   useMapEvents({
-    click(e: LeafletMouseEvent) {
-      setPosition({
+    click(e: LeafletMouseEvent){
+      setLocation({
         lat: e.latlng.lat,
         lng: e.latlng.lng
       })
@@ -33,22 +29,22 @@ function LocationMarker({ setPosition }: { setPosition: (pos: Position) => void 
   return null
 }
 
-export default function MapPicker({ defaultPos, onChange }:{ defaultPos?: Position|null, onChange: (pos: Position | null)=>void }) {
-  const [position, setPosition] = useState<Position | null>(defaultPos||null);
+export default function MapPicker({ defaultLoc, onChange }:{ defaultLoc?: Location | null, onChange: (pos: Location | null)=>void }){
+  const [location, setLocation] = useState<Location | null>(defaultLoc||null);
 
   useEffect(()=>{
-    if(!position){
-      navigator.geolocation.getCurrentPosition((pos) => setPosition({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
+    if(!location){
+      navigator.geolocation.getCurrentPosition((loc) => setLocation({
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
       }));
     }
   },[])
   useEffect(()=>{
-    onChange(position)
-  }, [position])
+    onChange(location)
+  }, [location])
 
-  const center: [number, number] = position ? [position.lat, position.lng] : [13.7563, 100.5018];
+  const center: [number, number] = location ? [location.lat, location.lng] : [13.7563, 100.5018];
 
   return (
     <MapContainer
@@ -61,9 +57,9 @@ export default function MapPicker({ defaultPos, onChange }:{ defaultPos?: Positi
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <LocationMarker setPosition={setPosition} />
+      <LocationMarker setLocation={setLocation} />
 
-      {position && <Marker position={[position.lat, position.lng]} />}
+      {location && <Marker position={[location.lat, location.lng]} />}
     </MapContainer>
   )
 }

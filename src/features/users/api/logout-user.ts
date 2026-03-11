@@ -2,12 +2,14 @@
 
 import { cookies } from "next/headers";
 
-export async function getUser(){
+export async function logoutUser(){
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;
+
   if(!userId){
-    return '';
+    throw new Error("Unauthorized");
   }
-  return userId;
+
+  cookieStore.delete("userId");
 }
 

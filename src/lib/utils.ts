@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: ClassValue[]){
   return twMerge(clsx(inputs))
 }
 
@@ -21,17 +21,19 @@ export function formatDateTime(date: Date){
 }
 
 export function isNumeric(str: string): boolean {
-  if (typeof str !== 'string' || str.trim().length === 0) {
+  if(typeof str !== 'string' || str.trim().length === 0){
     return false;
   }
   return !isNaN(Number(str)) && isFinite(Number(str));
 };
 
+// face recognition utils
+
 export function euclideanDistance(a: ArrayLike<number>, b: ArrayLike<number>): number {
   const len = a.length;
-  if (len !== b.length) return Number.POSITIVE_INFINITY;
+  if(len !== b.length) return Number.POSITIVE_INFINITY;
   let sum = 0;
-  for (let i = 0; i < len; i++) {
+  for (let i = 0; i < len; i++){
     const d = a[i] - b[i];
     sum += d * d;
   }
@@ -39,9 +41,9 @@ export function euclideanDistance(a: ArrayLike<number>, b: ArrayLike<number>): n
 }
 
 export function toFloat32Array(input: unknown): Float32Array | null {
-  if (!input) return null;
-  if (input instanceof Float32Array) return input;
-  if (typeof input === "string") {
+  if(!input) return null;
+  if(input instanceof Float32Array) return input;
+  if(typeof input === "string"){
     try {
       // Accept a JSON array/object string sent from the client.
       return parseStoredFaceId(input);
@@ -49,7 +51,7 @@ export function toFloat32Array(input: unknown): Float32Array | null {
       return null;
     }
   }
-  if (Array.isArray(input) && input.every((n) => typeof n === "number")) {
+  if(Array.isArray(input) && input.every((n) => typeof n === "number")){
     return new Float32Array(input);
   }
   return null;
@@ -60,15 +62,15 @@ export function parseStoredFaceId(faceIdJson: string): Float32Array | null {
   // produced by JSON.stringify(Float32Array).
   const v: unknown = JSON.parse(faceIdJson);
 
-  if (Array.isArray(v) && v.every((n) => typeof n === "number")) {
+  if(Array.isArray(v) && v.every((n) => typeof n === "number")){
     return new Float32Array(v);
   }
 
-  if (v && typeof v === "object") {
+  if(v && typeof v === "object"){
     const entries = Object.entries(v as Record<string, unknown>)
       .filter(([k, val]) => /^\d+$/.test(k) && typeof val === "number")
       .sort((a, b) => Number(a[0]) - Number(b[0]));
-    if (entries.length > 0) {
+    if(entries.length > 0){
       return new Float32Array(entries.map(([, val]) => val as number));
     }
   }
@@ -76,13 +78,13 @@ export function parseStoredFaceId(faceIdJson: string): Float32Array | null {
   return null;
 }
 
-export function findMatchUserFace(users: { id: string, faceId: string }[], faceId: Float32Array<ArrayBufferLike>) {
+export function findMatchUserFace(users: { id: string, faceId: string }[], faceId: Float32Array<ArrayBufferLike>){
   
   const threshold = 0.6;
 
   let best: { id: string; distance: number } | null = null;
   
-  for (const user of users) {
+  for (const user of users){
     const parsed = (() => {
       try {
         return parseStoredFaceId(user.faceId);
@@ -91,12 +93,12 @@ export function findMatchUserFace(users: { id: string, faceId: string }[], faceI
       }
     })();
 
-    if (!parsed) continue;
+    if(!parsed) continue;
 
     const distance = euclideanDistance(faceId, parsed);
-    if (!Number.isFinite(distance)) continue;
+    if(!Number.isFinite(distance)) continue;
 
-    if (!best || distance < best.distance) {
+    if(!best || distance < best.distance){
       best = { id: user.id, distance };
     }
   }
@@ -107,3 +109,29 @@ export function findMatchUserFace(users: { id: string, faceId: string }[], faceI
   return best
 }
 
+// location utils
+
+export const EARTH_RADIUS_METERS = 6371000;
+
+export type Location = {
+  lat: number
+  lng: number
+}
+
+export function degreesToRadians(deg: number){
+  return (deg * Math.PI) / 180;
+}
+
+export function calculateLocationDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+){
+  const dLat = degreesToRadians(lat2 - lat1);
+  const dLon = degreesToRadians(lon2 - lon1);
+
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(degreesToRadians(lat1)) * Math.cos(degreesToRadians(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); // Haversine formula
+  return EARTH_RADIUS_METERS * c;
+}

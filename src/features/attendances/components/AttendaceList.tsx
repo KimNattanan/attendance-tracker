@@ -1,156 +1,59 @@
 "use client";
 
-import type React from "react";
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import dynamic from "next/dynamic";
 import { findAttendancesWithFilters } from "@/features/attendances/api/get-attendances";
 import { formatDateTime } from "@/lib/utils";
-import { Button } from "./ui/button";
-import { deleteAttendance } from "@/features/attendances/api/delete-attendance";
-import type { Position } from "@/components/MapPicker";
-import { useAppContext } from "./AppContext";
+import { Button } from "../../../components/ui/button";
+import type { Location } from "@/lib/utils";
+import { Attendance, AttendanceBox } from "./AttendanceBox";
 
 const LocationMapView = dynamic(
-  () => import("@/components/LocationMapView"),
+  () => import("@/features/map/components/LocationMapView"),
   { ssr: false }
 );
 
 const MapPicker = dynamic(
-  () => import("@/components/MapPicker"),
+  () => import("@/features/map/components/MapPicker"),
   { ssr: false }
 );
 
-type Attendance = {
-  id: number;
-  userId: string;
-  type: string;
-  latitude: number;
-  longitude: number;
-  createdAt: Date;
-};
-
-function getTypeMeta(type: string) {
-  if (type === "check-in") {
-    return {
-      label: "Check In",
-      badgeClass:
-        "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200",
-      cardClass:
-        "border-emerald-200/70 bg-emerald-50/30 hover:bg-emerald-50/50",
-    };
-  }
-
-  return {
-    label: "Check Out",
-    badgeClass: "bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200",
-    cardClass: "border-rose-200/70 bg-rose-50/30 hover:bg-rose-50/50",
-  };
-}
-
-function AttendanceBox({
-  data,
-  invalidateData,
-  onShowMap,
-}: {
-  data: Attendance;
-  invalidateData: () => Promise<void>;
-  onShowMap: (data: Attendance) => void;
-}) {
-  const typeMeta = useMemo(() => getTypeMeta(data.type), [data.type]);
-  const { userId } = useAppContext();
-
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await deleteAttendance(data.id);
-    await invalidateData();
-  };
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onShowMap(data)}
-      onKeyDown={(e) => e.key === "Enter" && onShowMap(data)}
-      className={[
-        "cursor-pointer rounded-lg border p-4 transition-colors",
-        "shadow-sm hover:shadow",
-        typeMeta.cardClass,
-      ].join(" ")}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={[
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                typeMeta.badgeClass,
-              ].join(" ")}
-            >
-              {typeMeta.label}
-            </span>
-            <div className="text-sm font-medium text-slate-900">
-              {formatDateTime(data.createdAt).join(" ")}
-            </div>
-          </div>
-
-          <div className="mt-2 grid grid-cols-1 gap-1 text-sm text-slate-700 sm:grid-cols-2">
-            <div className="truncate">
-              <span className="text-slate-500">Lat</span>{" "}
-              <span className="font-mono">{data.latitude}</span>
-            </div>
-            <div className="truncate">
-              <span className="text-slate-500">Lng</span>{" "}
-              <span className="font-mono">{data.longitude}</span>
-            </div>
-          </div>
-        </div>
-
-        {userId === data.userId && (
-          <div className="flex shrink-0 items-center justify-end">
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
-              Delete
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export default function AttendanceList({ userId }:{ userId: string }) {
+export default function AttendanceList({ userId }:{ userId: string }){
   const [items, setItems] = useState<Attendance[]>([]);
   const [mapAttendance, setMapAttendance] = useState<Attendance | null>(null);
   const [timeFrom, setTimeFrom] = useState<string>("");
   const [timeTo, setTimeTo] = useState<string>("");
-  const [positionFilter, setPositionFilter] = useState<Position | null>(null);
+  const [locationFilter, setLocationFilter] = useState<Location | null>(null);
   const [isLocationFilterOpen, setIsLocationFilterOpen] = useState(false);
-  const [pendingPosition, setPendingPosition] = useState<Position | null>(null);
+  const [pendingLocation, setPendingLocation] = useState<Location | null>(null);
 
   const hasActiveFilters =
-    !!timeFrom || !!timeTo || positionFilter !== null;
+    !!timeFrom || !!timeTo || locationFilter !== null;
 
-  const fetchData = async (options?: { reset?: boolean }) => {
+  const fetchData = async (options?: { reset?: boolean; location?: Location | null }) => {
     const useFilters = !options?.reset;
+    const locationOverride = options?.location;
 
     const timeRange: { start?: Date; end?: Date } = {};
-    let position: Position | undefined;
+    let location: Location | undefined;
 
-    if (useFilters) {
-      if (timeFrom) {
+    if(useFilters){
+      if(timeFrom){
         timeRange.start = new Date(timeFrom);
       }
-      if (timeTo) {
+      if(timeTo){
         timeRange.end = new Date(timeTo);
       }
-      if (positionFilter) {
-        position = positionFilter;
+      const loc = locationOverride !== undefined ? locationOverride : locationFilter;
+      if(loc){
+        location = loc;
       }
     }
 
     const attendances = await findAttendancesWithFilters({
       userId,
       timeRange,
-      position,
+      location,
     });
     setItems(attendances);
   }
@@ -160,9 +63,9 @@ export default function AttendanceList({ userId }:{ userId: string }) {
   }, [userId])
 
   useEffect(() => {
-    if (!mapAttendance) return;
+    if(!mapAttendance) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMapAttendance(null);
+      if(e.key === "Escape") setMapAttendance(null);
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
@@ -175,8 +78,8 @@ export default function AttendanceList({ userId }:{ userId: string }) {
   const handleClearFilters = () => {
     setTimeFrom("");
     setTimeTo("");
-    setPositionFilter(null);
-    setPendingPosition(null);
+    setLocationFilter(null);
+    setPendingLocation(null);
     fetchData({ reset: true });
   };
 
@@ -236,15 +139,15 @@ export default function AttendanceList({ userId }:{ userId: string }) {
               <button
                 type="button"
                 onClick={() => {
-                  setPendingPosition(positionFilter);
+                  setPendingLocation(locationFilter);
                   setIsLocationFilterOpen(true);
                 }}
                 className="inline-flex items-center rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-50"
               >
-                {positionFilter
-                  ? `Within 200m of ${positionFilter.lat.toFixed(
+                {locationFilter
+                  ? `Within 200m of ${locationFilter.lat.toFixed(
                       4,
-                    )}, ${positionFilter.lng.toFixed(4)}`
+                    )}, ${locationFilter.lng.toFixed(4)}`
                   : "Anywhere"}
               </button>
             </div>
@@ -363,16 +266,16 @@ export default function AttendanceList({ userId }:{ userId: string }) {
             </div>
             <div className="p-3 sm:p-4">
               <div className="mb-3 text-xs text-slate-600">
-                {pendingPosition
-                  ? `Selected: ${pendingPosition.lat.toFixed(
+                {pendingLocation
+                  ? `Selected: ${pendingLocation.lat.toFixed(
                       5,
-                    )}, ${pendingPosition.lng.toFixed(5)}`
+                    )}, ${pendingLocation.lng.toFixed(5)}`
                   : "Anywhere (no specific point selected)"}
               </div>
               <div className="overflow-hidden rounded-lg border border-slate-200">
                 <MapPicker
-                  defaultPos={pendingPosition}
-                  onChange={(pos) => setPendingPosition(pos)}
+                  defaultLoc={pendingLocation}
+                  onChange={(loc) => setPendingLocation(loc)}
                 />
               </div>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -381,8 +284,8 @@ export default function AttendanceList({ userId }:{ userId: string }) {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setPendingPosition(null);
-                    setPositionFilter(null);
+                    setPendingLocation(null);
+                    setLocationFilter(null);
                     setIsLocationFilterOpen(false);
                     fetchData({ reset: true });
                   }}
@@ -393,9 +296,9 @@ export default function AttendanceList({ userId }:{ userId: string }) {
                   type="button"
                   size="sm"
                   onClick={() => {
-                    setPositionFilter(pendingPosition);
+                    setLocationFilter(pendingLocation);
                     setIsLocationFilterOpen(false);
-                    fetchData();
+                    fetchData({ location: pendingLocation });
                   }}
                 >
                   Apply location

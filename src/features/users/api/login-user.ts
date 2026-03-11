@@ -1,10 +1,11 @@
 "use server"
+
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { findMatchUserFace } from "@/lib/utils";
 
-export async function loginUser(faceId: Float32Array<ArrayBufferLike>) {
-  if (!faceId) {
+export async function loginUser(faceId: Float32Array<ArrayBufferLike>){
+  if(!faceId){
     throw new Error("faceId is required");
   }
   const faceIdJson = JSON.stringify(Array.from(faceId));
@@ -15,7 +16,7 @@ export async function loginUser(faceId: Float32Array<ArrayBufferLike>) {
 
   let best = findMatchUserFace(users, faceId)
 
-  if (!best) {
+  if(!best){
     const user = await prisma.user.create({
       data: {
         faceId: faceIdJson,

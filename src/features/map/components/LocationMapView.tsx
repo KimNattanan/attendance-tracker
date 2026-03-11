@@ -22,7 +22,7 @@ export default function LocationMapView({
   lat: number;
   lng: number;
   className?: string;
-}) {
+}){
   const center: [number, number] = [lat, lng];
 
   useEffect(() => {
