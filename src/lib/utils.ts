@@ -4,3 +4,106 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+export const monthNamesAbbr = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+export function formatDateTime(date: Date){
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return [date.getDate(), monthNames[date.getMonth()], date.getFullYear(), `${hours}:${minutes}:${seconds}`];
+}
+
+export function isNumeric(str: string): boolean {
+  if (typeof str !== 'string' || str.trim().length === 0) {
+    return false;
+  }
+  return !isNaN(Number(str)) && isFinite(Number(str));
+};
+
+export function euclideanDistance(a: ArrayLike<number>, b: ArrayLike<number>): number {
+  const len = a.length;
+  if (len !== b.length) return Number.POSITIVE_INFINITY;
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    const d = a[i] - b[i];
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+export function toFloat32Array(input: unknown): Float32Array | null {
+  if (!input) return null;
+  if (input instanceof Float32Array) return input;
+  if (typeof input === "string") {
+    try {
+      // Accept a JSON array/object string sent from the client.
+      return parseStoredFaceId(input);
+    } catch {
+      return null;
+    }
+  }
+  if (Array.isArray(input) && input.every((n) => typeof n === "number")) {
+    return new Float32Array(input);
+  }
+  return null;
+}
+
+export function parseStoredFaceId(faceIdJson: string): Float32Array | null {
+  // We store as a JSON array of numbers, but older data might be an object with numeric keys
+  // produced by JSON.stringify(Float32Array).
+  const v: unknown = JSON.parse(faceIdJson);
+
+  if (Array.isArray(v) && v.every((n) => typeof n === "number")) {
+    return new Float32Array(v);
+  }
+
+  if (v && typeof v === "object") {
+    const entries = Object.entries(v as Record<string, unknown>)
+      .filter(([k, val]) => /^\d+$/.test(k) && typeof val === "number")
+      .sort((a, b) => Number(a[0]) - Number(b[0]));
+    if (entries.length > 0) {
+      return new Float32Array(entries.map(([, val]) => val as number));
+    }
+  }
+
+  return null;
+}
+
+export function findMatchUserFace(users: { id: string, faceId: string }[], faceId: Float32Array<ArrayBufferLike>) {
+  
+  const threshold = 0.6;
+
+  let best: { id: string; distance: number } | null = null;
+  
+  for (const user of users) {
+    const parsed = (() => {
+      try {
+        return parseStoredFaceId(user.faceId);
+      } catch {
+        return null;
+      }
+    })();
+
+    if (!parsed) continue;
+
+    const distance = euclideanDistance(faceId, parsed);
+    if (!Number.isFinite(distance)) continue;
+
+    if (!best || distance < best.distance) {
+      best = { id: user.id, distance };
+    }
+  }
+
+  if(!best) return null
+  if(best.distance > threshold) return null;
+
+  return best
+}
+

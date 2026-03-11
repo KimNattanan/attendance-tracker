@@ -26,4 +26,5 @@ model Attendance {
   latitude Float
   longitude Float
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+  type String
 }

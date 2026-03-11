@@ -1,33 +1,39 @@
+"use server";
+
 import { prisma } from "@/lib/prisma";
+import { findMatchUserFace } from "@/lib/utils";
 
 type CreateAttendanceInput = {
+  faceId: Float32Array<ArrayBufferLike>;
   latitude: number;
   longitude: number;
-  faceId: string;
+  attendanceType: string;
 };
 
 export async function createAttendance({
+  faceId,
   latitude,
   longitude,
-  faceId,
+  attendanceType,
 }: CreateAttendanceInput) {
   if (!faceId) {
     throw new Error("faceId is required");
   }
 
-  const user = await prisma.user.findFirst({
-    where: { faceId },
-  });
+  const users = await prisma.user.findMany();
 
-  if (!user) {
-    throw new Error("User not found. Please register first.");
+  const best = findMatchUserFace(users, faceId)
+
+  if (!best) {
+    throw new Error("User not found. Please register if this is your first time.");
   }
 
   const attendance = await prisma.attendance.create({
     data: {
-      userId: user.id,
+      userId: best.id,
       latitude,
-      longtitude: longitude,
+      longitude: longitude,
+      type: attendanceType,
     },
   });
 

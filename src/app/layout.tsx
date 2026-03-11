@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 import { cn } from "@/lib/utils";
+import { AppContextProvider } from "@/components/AppContext";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { FaHome } from "react-icons/fa";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -30,7 +35,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AppContextProvider>
+          <div className="flex flex-col min-h-screen">
+            <header className="bg-white shadow-sm">
+              <div className="container mx-auto px-4 py-3">
+                <h1 className="text-2xl font-bold">Attendance Tracker</h1>
+              </div>
+            </header>
+            {children}
+          </div>
+          <footer className="bg-white shadow-sm">
+            <div className="container mx-auto px-4 py-3">
+              <p className="text-sm text-gray-500">© 2026 Attendance Tracker. All rights reserved.</p>
+            </div>
+          </footer>
+        </AppContextProvider>
       </body>
     </html>
   );

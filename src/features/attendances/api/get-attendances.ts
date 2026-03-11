@@ -1,15 +1,17 @@
+"use server";
+
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { Position } from "@/components/MapPicker";
 
 type TimeRange = {
-  start: Date;
-  end: Date;
+  start?: Date;
+  end?: Date;
 };
 
 type FindAttendancesWithFiltersInput = {
   userId: string;
-  latitude: number;
-  longitude: number;
+  position?: Position;
   timeRange: TimeRange;
 };
 
@@ -42,8 +44,7 @@ function distanceInMeters(
 
 export async function findAttendancesWithFilters({
   userId,
-  latitude,
-  longitude,
+  position,
   timeRange,
 }: FindAttendancesWithFiltersInput) {
   const attendances = await prisma.attendance.findMany({
@@ -59,46 +60,48 @@ export async function findAttendancesWithFilters({
     },
   });
 
+  if(!position) return attendances;
+
   return attendances.filter((attendance) => {
     const distance = distanceInMeters(
-      latitude,
-      longitude,
+      position.lat,
+      position.lng,
       attendance.latitude,
-      attendance.longtitude,
+      attendance.longitude,
     );
 
     return distance <= 200;
   });
 }
 
-export async function findCurrentUserAttendances(timeRange?: TimeRange) {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("userId")?.value;
+// export async function findCurrentUserAttendances(timeRange?: TimeRange) {
+//   const cookieStore = await cookies();
+//   const userId = cookieStore.get("userId")?.value;
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+//   if (!userId) {
+//     throw new Error("Unauthorized");
+//   }
 
-  const where: NonNullable<
-    Parameters<typeof prisma.attendance.findMany>[0]
-  >["where"] = {
-    userId,
-  };
+//   const where: NonNullable<
+//     Parameters<typeof prisma.attendance.findMany>[0]
+//   >["where"] = {
+//     userId,
+//   };
 
-  if (timeRange) {
-    where.createdAt = {
-      gte: timeRange.start,
-      lte: timeRange.end,
-    };
-  }
+//   if (timeRange) {
+//     where.createdAt = {
+//       gte: timeRange.start,
+//       lte: timeRange.end,
+//     };
+//   }
 
-  const attendances = await prisma.attendance.findMany({
-    where: where,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+//   const attendances = await prisma.attendance.findMany({
+//     where: where,
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
 
-  return attendances;
-}
+//   return attendances;
+// }
 
