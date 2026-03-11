@@ -120,19 +120,25 @@ export default function CheckOut(){
         throw new Error("Unable to get user's location.");
       }
 
-      const attendance = await createAttendance({
+      const result = await createAttendance({
         faceId: detection.descriptor,
         latitude: location.lat,
         longitude: location.lng,
         attendanceType: "check-out",
       });
 
-      setUserId(attendance.userId);
+      if (!result.success) {
+        setStatus("camera_on");
+        setError(result.error);
+        return;
+      }
+
+      setUserId(result.data.userId);
       setStatus("success");
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
-      if(videoRef.current) videoRef.current.srcObject = null;
-    } catch(e) {
+      if (videoRef.current) videoRef.current.srcObject = null;
+    } catch (e) {
       setStatus("camera_on");
       setError(e instanceof Error ? e.message : "Scan failed");
     }

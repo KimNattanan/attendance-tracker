@@ -19,9 +19,13 @@ export default function Profile(){
       </div>
       <div className="flex flex-col gap-2 items-center">
         <Button variant="outline" className="w-fit px-8" onClick={async () => {
-          await logoutUser();
+          const result = await logoutUser();
+          if (!result.success) {
+            window.alert(result.error);
+            return;
+          }
           setUserId("");
-          if(window.location.pathname !== "/"){
+          if (window.location.pathname !== "/") {
             window.location.href = "/";
           }
         }}>Logout</Button>
@@ -32,10 +36,14 @@ export default function Profile(){
             const confirmed = window.confirm(
               "Are you sure you want to delete your account? This action cannot be undone."
             );
-            if(!confirmed) return;
-            await deleteUser();
+            if (!confirmed) return;
+            const result = await deleteUser();
+            if (!result.success) {
+              window.alert(result.error);
+              return;
+            }
             setUserId("");
-            if(window.location.pathname !== "/"){
+            if (window.location.pathname !== "/") {
               window.location.href = "/";
             }
           }}

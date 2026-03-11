@@ -48,14 +48,22 @@ export function AttendanceBox({
   const { userId } = useAppContext();
   const [deletePending, setDeletePending] = useState(false);
   
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setDeletePending(true);
+    setDeleteError(null);
     try {
-      await deleteAttendance(data.id);
+      const result = await deleteAttendance(data.id);
+      if (!result.success) {
+        setDeleteError(result.error);
+        return;
+      }
       await invalidateData();
-    } catch(e) {
+    } catch (e) {
       console.error(e);
+      setDeleteError("Something went wrong. Please try again.");
     } finally {
       setDeletePending(false);
     }
@@ -102,15 +110,20 @@ export function AttendanceBox({
         </div>
 
         {userId === data.userId && (
-          <div className="flex shrink-0 items-center justify-end">
-            <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deletePending}>
-              Delete
-            </Button>
-            {deletePending && (
-              <div className="ml-2 text-xs text-destructive flex items-center gap-1">
-                <Loader2 className="size-4 animate-spin" />
-                Deleting...
-              </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <div className="flex items-center gap-2">
+              <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deletePending}>
+                Delete
+              </Button>
+              {deletePending && (
+                <div className="text-xs text-destructive flex items-center gap-1">
+                  <Loader2 className="size-4 animate-spin" />
+                  Deleting...
+                </div>
+              )}
+            </div>
+            {deleteError && (
+              <p className="text-xs text-destructive">{deleteError}</p>
             )}
           </div>
         )}

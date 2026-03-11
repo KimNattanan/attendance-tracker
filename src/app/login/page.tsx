@@ -111,14 +111,20 @@ export default function Login(){
         throw new Error("No face detected. Please center your face and try again.");
       }
 
-      const user = await loginUser(detection.descriptor);
+      const result = await loginUser(detection.descriptor);
 
-      setUserId(user.id);
+      if (!result.success) {
+        setStatus("camera_on");
+        setError(result.error);
+        return;
+      }
+
+      setUserId(result.data.id);
       setStatus("success");
-      if(window.location.pathname !== "/profile"){
+      if (window.location.pathname !== "/profile") {
         window.location.href = "/profile";
       }
-    } catch(e) {
+    } catch (e) {
       setStatus("camera_on");
       setError(e instanceof Error ? e.message : "Scan failed");
     }

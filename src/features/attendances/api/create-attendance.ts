@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma";
+import type { ServerActionResult } from "@/lib/server-action";
 import { findMatchUserFace } from "@/lib/utils";
 
 type CreateAttendanceInput = {
@@ -10,33 +11,34 @@ type CreateAttendanceInput = {
   attendanceType: string;
 };
 
-export async function createAttendance({
-  faceId,
-  latitude,
-  longitude,
-  attendanceType,
-}: CreateAttendanceInput){
-  if(!faceId){
-    throw new Error("faceId is required");
+export async function createAttendance(
+  input: CreateAttendanceInput
+): Promise<ServerActionResult<{ id: number; userId: string; type: string; latitude: number; longitude: number; createdAt: Date }>> {
+  const { faceId, latitude, longitude, attendanceType } = input;
+
+  if (!faceId) {
+    return { success: false, error: "faceId is required" };
   }
 
   const users = await prisma.user.findMany();
+  const best = findMatchUserFace(users, faceId);
 
-  const best = findMatchUserFace(users, faceId)
-
-  if(!best){
-    throw new Error("User not found. Please register if this is your first time.");
+  if (!best) {
+    return {
+      success: false,
+      error: "User not found. Please register if this is your first time.",
+    };
   }
 
   const attendance = await prisma.attendance.create({
     data: {
       userId: best.id,
       latitude,
-      longitude: longitude,
+      longitude,
       type: attendanceType,
     },
   });
 
-  return attendance;
+  return { success: true, data: attendance };
 }
 
