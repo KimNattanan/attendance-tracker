@@ -21,7 +21,7 @@ export async function createAttendance(
   }
 
   const users = await prisma.user.findMany();
-  const best = findMatchUserFace(users, faceId);
+  const best = await findMatchUserFace(users, faceId);
 
   if (!best) {
     return {

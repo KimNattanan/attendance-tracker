@@ -1,9 +1,12 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { decryptString } from "./server-action";
 
 export function cn(...inputs: ClassValue[]){
   return twMerge(clsx(inputs))
 }
+
+// utils
 
 export const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -27,7 +30,7 @@ export function isNumeric(str: string): boolean {
   return !isNaN(Number(str)) && isFinite(Number(str));
 };
 
-// face recognition utils
+// face recognition
 
 export function euclideanDistance(a: ArrayLike<number>, b: ArrayLike<number>): number {
   const len = a.length;
@@ -40,26 +43,8 @@ export function euclideanDistance(a: ArrayLike<number>, b: ArrayLike<number>): n
   return Math.sqrt(sum);
 }
 
-export function toFloat32Array(input: unknown): Float32Array | null {
-  if(!input) return null;
-  if(input instanceof Float32Array) return input;
-  if(typeof input === "string"){
-    try {
-      // Accept a JSON array/object string sent from the client.
-      return parseStoredFaceId(input);
-    } catch {
-      return null;
-    }
-  }
-  if(Array.isArray(input) && input.every((n) => typeof n === "number")){
-    return new Float32Array(input);
-  }
-  return null;
-}
-
 export function parseStoredFaceId(faceIdJson: string): Float32Array | null {
-  // We store as a JSON array of numbers, but older data might be an object with numeric keys
-  // produced by JSON.stringify(Float32Array).
+  
   const v: unknown = JSON.parse(faceIdJson);
 
   if(Array.isArray(v) && v.every((n) => typeof n === "number")){
@@ -78,16 +63,16 @@ export function parseStoredFaceId(faceIdJson: string): Float32Array | null {
   return null;
 }
 
-export function findMatchUserFace(users: { id: string, faceId: string }[], faceId: Float32Array<ArrayBufferLike>){
+export async function findMatchUserFace(users: { id: string, faceId: string }[], faceId: Float32Array<ArrayBufferLike>){
   
   const threshold = 0.6;
 
   let best: { id: string; distance: number } | null = null;
   
   for (const user of users){
-    const parsed = (() => {
+    const parsed = await (async () => {
       try {
-        return parseStoredFaceId(user.faceId);
+        return parseStoredFaceId(await decryptString(user.faceId));
       } catch {
         return null;
       }
