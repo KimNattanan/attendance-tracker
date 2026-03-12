@@ -2,19 +2,39 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Configure environment**
+
+   Copy the example env file and fill in your values:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and set:
+
+   - `DATABASE_URL` — PostgreSQL connection string (e.g. Supabase pooler URL)
+   - `DIRECT_URL` — Direct PostgreSQL connection (e.g. Supabase direct URL)
+   - `ENCRYPTION_SECRET` — Secret key for encrypting face IDs (e.g. `openssl rand -base64 32`)
+
+3. **Generate Prisma client**
+
+   ```bash
+   npx prisma generate
+   ```
+
+4. **Run the development server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
